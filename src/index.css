@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --dot-color: #d4d4d8;
+  --canvas-bg: #fafafa;
+}
+
+.dark {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: #1e293b;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --dot-color: #2a2a3a;
+  --canvas-bg: #0f0f17;
+}
+
+/* Base styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--text-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* ReactFlow — reset node wrapper so CustomNode owns all styling */
+.react-flow__node {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.react-flow__node .react-flow__handle {
+  pointer-events: all !important;
+  z-index: 10;
+}
+
+/* Canvas background */
+.react-flow__background {
+  background-color: var(--canvas-bg) !important;
+}
+
+/* Handles */
+.react-flow__handle {
+  transition: transform 0.15s ease;
+  cursor: crosshair !important;
+}
+.react-flow__handle:hover {
+  transform: scale(1.4);
+}
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+}
+
+/* Edges */
+.react-flow__edge-path {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+/* Connection line while dragging */
+.react-flow__connection-path {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+}
+
+/* Minimap */
+.react-flow__minimap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary) !important;
+}
+
+/* Controls */
+.react-flow__controls {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.react-flow__controls-button {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  fill: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+}
+.react-flow__controls-button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Selection box */
+.react-flow__selection {
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+}
+
+/* Utility classes */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2
+           bg-primary-600 text-white font-medium rounded-lg
+           hover:bg-primary-700 focus:outline-none focus:ring-2
+           focus:ring-primary-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2
+           bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300
+           font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700
+           focus:outline-none focus:ring-2 focus:ring-gray-400
+           focus:ring-offset-2 disabled:opacity-50
+           disabled:cursor-not-allowed transition-colors duration-200;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center px-4 py-2
+           bg-red-600 text-white font-medium rounded-lg
+           hover:bg-red-700 focus:outline-none focus:ring-2
+           focus:ring-red-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 bg-white dark:bg-gray-900
+           border border-gray-300 dark:border-gray-700
+           rounded-lg text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500
+           focus:border-primary-500 transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-900 border border-gray-200
+           dark:border-gray-800 rounded-xl shadow-sm;
+  }
+}
