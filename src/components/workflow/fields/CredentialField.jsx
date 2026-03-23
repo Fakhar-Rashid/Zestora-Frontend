@@ -11,7 +11,8 @@ const CredentialField = ({ field, value, onChange }) => {
     const fetchCredentials = async () => {
       setLoading(true);
       try {
-        const response = await credentialService.list(field.service);
+        const svc = Array.isArray(field.service) ? field.service.join(',') : field.service;
+        const response = await credentialService.list(svc);
         const data = response.data || response.credentials || response;
         if (!cancelled) {
           setCredentials(Array.isArray(data) ? data : []);

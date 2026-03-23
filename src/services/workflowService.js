@@ -100,3 +100,15 @@ export async function deactivate(id) {
   const { data } = await api.post(`/workflows/${id}/deactivate`);
   return data;
 }
+
+/**
+ * Send a test chat message to a workflow with an AI Agent.
+ * @param {string} id - Workflow ID
+ * @param {string} message - The chat message to send
+ * @param {string} [sessionId] - Optional session ID for conversation memory
+ * @returns {Promise<object>}
+ */
+export async function chat(id, message, sessionId) {
+  const { data } = await api.post(`/workflows/${id}/chat`, { message, sessionId });
+  return data;
+}
