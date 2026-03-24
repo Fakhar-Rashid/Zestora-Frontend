@@ -33,6 +33,12 @@ export const NODE_CATEGORIES = [
     color: '#06b6d4',
   },
   {
+    key: 'output',
+    label: 'Output',
+    description: 'Display and export data',
+    color: '#10b981',
+  },
+  {
     key: 'integrations',
     label: 'Integrations',
     description: 'Third-party services',

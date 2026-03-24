@@ -17,14 +17,23 @@ const downloadFile = (content, filename, mimeType) => {
 
 const handleOutputs = (steps) => {
   if (!steps) return;
+  const { updateNodeData } = useWorkflowStore.getState();
+
   for (const step of steps) {
     if (step.status !== 'success' || !step.outputData) continue;
     const out = step.outputData;
+
+    // CSV download
     if (step.nodeType === 'csv-export' && out.csv) {
       downloadFile(out.csv, out.filename || 'export.csv', 'text/csv');
     }
     if (step.nodeType === 'file-download' && out.content) {
       downloadFile(out.content, out.filename || 'output.txt', 'text/plain');
+    }
+
+    // Text Output — push data into the node so it displays on canvas
+    if (step.nodeType === 'text-output') {
+      updateNodeData(step.nodeId, { lastOutput: out });
     }
   }
 };

@@ -5,6 +5,7 @@ import CredentialField from './fields/CredentialField';
 import CheckboxField from './fields/CheckboxField';
 import NumberField from './fields/NumberField';
 import JsonField from './fields/JsonField';
+import KnowledgeBaseField from './fields/KnowledgeBaseField';
 
 const FIELD_COMPONENTS = {
   string: StringField,
@@ -16,6 +17,7 @@ const FIELD_COMPONENTS = {
   boolean: CheckboxField,
   number: NumberField,
   json: JsonField,
+  knowledgebase: KnowledgeBaseField,
 };
 
 /**

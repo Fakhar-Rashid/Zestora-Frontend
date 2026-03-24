@@ -1,11 +1,39 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, X, Loader2, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, X, Loader2, MessageSquare, Trash2, Wrench } from 'lucide-react';
 import * as workflowService from '../../services/workflowService';
 import useWorkflowStore from '../../store/workflowStore';
 
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT = 700;
 const DEFAULT_HEIGHT = 340;
+
+/**
+ * After a chat response, push the result into any text-output nodes
+ * connected downstream of the ai-agent node so they display on canvas.
+ */
+const pushToTextOutputNodes = (responseText) => {
+  const { nodes, edges, updateNodeData } = useWorkflowStore.getState();
+
+  // Find the ai-agent node
+  const agentNode = nodes.find((n) => {
+    const rt = n.data?.registryType || n.data?.nodeType?.type || '';
+    return rt === 'ai-agent';
+  });
+  if (!agentNode) return;
+
+  // Find text-output nodes connected downstream from the agent
+  const downstreamEdges = edges.filter((e) => e.source === agentNode.id);
+  for (const edge of downstreamEdges) {
+    const targetNode = nodes.find((n) => n.id === edge.target);
+    if (!targetNode) continue;
+    const rt = targetNode.data?.registryType || targetNode.data?.nodeType?.type || '';
+    if (rt === 'text-output') {
+      updateNodeData(targetNode.id, {
+        lastOutput: { displayText: responseText },
+      });
+    }
+  }
+};
 
 const ChatPanel = ({ onClose }) => {
   const [messages, setMessages] = useState([]);
@@ -74,7 +102,11 @@ const ChatPanel = ({ onClose }) => {
         setMessages((prev) => [...prev, { role: 'error', content: result.message || result.error || 'Something went wrong' }]);
       } else {
         const response = result.data?.response || 'No response';
-        setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
+        const toolsUsed = result.data?.toolsUsed || [];
+        setMessages((prev) => [...prev, { role: 'assistant', content: response, toolsUsed }]);
+
+        // Push response to text-output nodes on canvas
+        pushToTextOutputNodes(response);
       }
     } catch (err) {
       const errMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to get response';
@@ -142,15 +174,31 @@ const ChatPanel = ({ onClose }) => {
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap
-              ${msg.role === 'user'
-                ? 'bg-indigo-500 text-white rounded-br-sm'
-                : msg.role === 'error'
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded-bl-sm'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm'
-              }`}
-            >
-              {msg.content}
+            <div className="max-w-[80%]">
+              <div className={`rounded-xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap
+                ${msg.role === 'user'
+                  ? 'bg-indigo-500 text-white rounded-br-sm'
+                  : msg.role === 'error'
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded-bl-sm'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm'
+                }`}
+              >
+                {msg.content}
+              </div>
+              {/* Show tools used */}
+              {msg.toolsUsed && msg.toolsUsed.length > 0 && (
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  <Wrench className="w-3 h-3 text-gray-400 shrink-0" />
+                  {msg.toolsUsed.map((tool, j) => (
+                    <span
+                      key={j}
+                      className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 font-medium"
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}

@@ -1,14 +1,18 @@
-import { memo, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { memo, useState, useEffect } from 'react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import useNodeRegistryStore from '../../../store/nodeRegistryStore';
+import useWorkflowStore from '../../../store/workflowStore';
 import runWorkflow from '../../../utils/executeWorkflow';
 import {
   Play, MessageCircle, Send, Mail, Bot, FileText, Smile,
   Youtube, MapPin, GitBranch, GitMerge, GitPullRequest,
   Scissors, FileSpreadsheet, Table, Globe, Clock, Zap,
   CheckCircle2, XCircle, Loader2, AlertTriangle,
-  Cpu, Database, Wrench, Plus, Webhook,
+  Cpu, Database, Wrench, Plus, Webhook, Brain, Shield,
+  MessageSquare, BookOpen, Type,
 } from 'lucide-react';
+
+/* ─────────── Icon helpers ─────────── */
 
 const ICON_MAP = {
   play: Play, 'message-circle': MessageCircle, send: Send,
@@ -17,10 +21,10 @@ const ICON_MAP = {
   'git-merge': GitMerge, 'git-pull-request': GitPullRequest,
   scissors: Scissors, 'file-spreadsheet': FileSpreadsheet,
   table: Table, globe: Globe, clock: Clock, zap: Zap,
-  webhook: Webhook,
+  webhook: Webhook, type: Type,
   Play, MessageCircle, Send, Mail, Bot, FileText, Smile,
   Youtube, MapPin, GitBranch, GitMerge, GitPullRequest,
-  Scissors, FileSpreadsheet, Table, Globe, Clock, Zap, Webhook,
+  Scissors, FileSpreadsheet, Table, Globe, Clock, Zap, Webhook, Type,
 };
 
 const getIcon = (name) => ICON_MAP[name] || Zap;
@@ -30,6 +34,8 @@ const STATUS = {
   success: { icon: CheckCircle2, cls: '' },
   error: { icon: XCircle, cls: '' },
 };
+
+/* ─────────── Custom SVG Icons ─────────── */
 
 const WhatsAppIcon = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="white">
@@ -50,6 +56,8 @@ const EmailIcon = ({ className }) => (
   </svg>
 );
 
+/* ─────────── Trigger configs ─────────── */
+
 const TRIGGER_CONFIG = {
   'manual-trigger':    { icon: Play,          color: '#6366f1', label: 'Test workflow',            fill: true },
   'whatsapp-receive':  { icon: WhatsAppIcon,  color: '#25D366', label: 'Receive WhatsApp message', fill: false, custom: true },
@@ -59,11 +67,7 @@ const TRIGGER_CONFIG = {
   'schedule-trigger':  { icon: Clock,         color: '#8b5cf6', label: 'Scheduled trigger',        fill: false },
 };
 
-const AGENT_SLOTS = [
-  { id: 'chat-model', label: 'Chat Model', required: true },
-  { id: 'memory', label: 'Memory' },
-  { id: 'tool', label: 'Tool' },
-];
+/* ─────────── Trigger Node ─────────── */
 
 const TriggerNode = ({ data, selected }) => {
   const [running, setRunning] = useState(false);
@@ -128,6 +132,8 @@ const TriggerNode = ({ data, selected }) => {
   );
 };
 
+/* ─────────── Standard Node ─────────── */
+
 const StandardNode = ({ data, selected }) => {
   const { label, nodeType, status = 'idle' } = data;
   const color = nodeType?.color || '#6366f1';
@@ -183,16 +189,47 @@ const StandardNode = ({ data, selected }) => {
   );
 };
 
+/* ─────────── Agent Node (with functional indicators) ─────────── */
+
 const AgentNode = ({ data, selected }) => {
-  const { label, nodeType, status = 'idle' } = data;
+  const { label, nodeType, status = 'idle', config = {} } = data;
   const color = nodeType?.color || '#8b5cf6';
   const statusInfo = STATUS[status];
+
+  // Derive what's configured from properties
+  const hasModel = !!config.provider;
+  const hasMemory = config.memoryEnabled !== false;
+  const hasTools = config.enableTools !== false;
+
+  const indicators = [
+    {
+      id: 'model',
+      label: config.provider || 'Model',
+      icon: Cpu,
+      active: hasModel,
+      color: '#3b82f6',
+    },
+    {
+      id: 'memory',
+      label: hasMemory ? `Memory (${config.memoryWindow || 20})` : 'No Memory',
+      icon: Brain,
+      active: hasMemory,
+      color: '#f59e0b',
+    },
+    {
+      id: 'tools',
+      label: hasTools ? 'Tools On' : 'Tools Off',
+      icon: Wrench,
+      active: hasTools,
+      color: '#10b981',
+    },
+  ];
 
   return (
     <div className="flex flex-col items-center">
       <div
         className={`
-          relative w-[200px] rounded-2xl
+          relative w-[220px] rounded-2xl
           bg-white dark:bg-[#1c1c28]
           border-[1.5px] transition-all duration-150
           ${selected
@@ -205,51 +242,132 @@ const AgentNode = ({ data, selected }) => {
           className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
           style={{ background: color, left: -6 }}
         />
-        <div className="flex flex-col items-center py-4 px-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl mb-2"
+        {/* Agent header */}
+        <div className="flex flex-col items-center py-3 px-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-2xl mb-1.5"
             style={{ background: `${color}15` }}>
-            <Bot className="w-6 h-6" style={{ color }} />
+            <Bot className="w-5 h-5" style={{ color }} />
           </div>
-          <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 text-center">
+          <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 text-center">
             {label}
           </p>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Tools Agent</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+            {config.provider ? `${config.provider}${config.model ? ` · ${config.model}` : ''}` : 'Tools Agent'}
+          </p>
           {statusInfo && (
-            <statusInfo.icon className={`w-4 h-4 mt-1.5 ${statusInfo.cls}`}
+            <statusInfo.icon className={`w-4 h-4 mt-1 ${statusInfo.cls}`}
               style={{ color: status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : '#60a5fa' }} />
           )}
         </div>
+
+        {/* Configuration indicators */}
+        <div className="border-t border-gray-100 dark:border-gray-700/50 px-2.5 py-1.5 flex items-center justify-center gap-3">
+          {indicators.map((ind) => {
+            const IndIcon = ind.icon;
+            return (
+              <div key={ind.id} className="flex items-center gap-1" title={ind.label}>
+                <IndIcon
+                  className="w-3 h-3"
+                  style={{ color: ind.active ? ind.color : '#9ca3af' }}
+                />
+                <span className={`text-[9px] font-medium ${ind.active ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'}`}>
+                  {ind.id === 'model' ? (config.provider || 'N/A') : ind.active ? 'On' : 'Off'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
         <Handle type="source" position={Position.Right}
           className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
           style={{ background: color, right: -6 }}
         />
       </div>
-      <div className="flex items-start gap-6 mt-[-1px]">
-        {AGENT_SLOTS.map((slot) => (
-          <div key={slot.id} className="flex flex-col items-center">
-            <div className="w-[1.5px] h-3 bg-gray-300 dark:bg-gray-600" />
-            <span className={`text-[10px] font-medium mb-1
-              ${slot.required ? 'text-orange-500 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500'}`}>
-              {slot.label}{slot.required && '*'}
-            </span>
-            <div className="relative w-5 h-5">
-              <div className="absolute inset-0 rotate-45 rounded-[3px] border-[1.5px] bg-white dark:bg-[#1c1c28]
-                             border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-colors" />
-              <Plus className="absolute inset-0 m-auto w-2.5 h-2.5 text-gray-400 dark:text-gray-500" />
-              <Handle id={`agent-${slot.id}`} type="target" position={Position.Bottom}
-                className="!w-5 !h-5 !bg-transparent !border-none !rounded-none !bottom-0 !left-0"
-                style={{ transform: 'none' }} />
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
 
+/* ─────────── Text Output Node ─────────── */
+
+const TextOutputNode = ({ data, selected, id }) => {
+  const { label, nodeType, status = 'idle' } = data;
+  const color = nodeType?.color || '#10b981';
+  const statusInfo = STATUS[status];
+
+  // Get output text from execution results
+  const [displayText, setDisplayText] = useState('');
+  const nodes = useWorkflowStore((s) => s.nodes);
+
+  // Listen for execution output data
+  useEffect(() => {
+    const node = nodes.find((n) => n.id === id);
+    const outputData = node?.data?.lastOutput;
+    if (outputData) {
+      const text = outputData.displayText || outputData.responseMessage || outputData.text || outputData.content || '';
+      setDisplayText(text);
+    }
+  }, [nodes, id]);
+
+  return (
+    <div
+      className={`
+        group relative w-[260px] rounded-xl
+        bg-white dark:bg-[#1c1c28]
+        border-[1.5px] transition-all duration-150
+        ${selected
+          ? 'border-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]'
+          : 'border-gray-200/80 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600'}
+        shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]
+      `}
+    >
+      <Handle type="target" position={Position.Left}
+        className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
+        style={{ background: color, left: -6 }}
+      />
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+          style={{ background: `${color}18` }}>
+          <Type className="w-[18px] h-[18px]" style={{ color }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight">
+            {label}
+          </p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+            Text Output
+          </p>
+        </div>
+        {statusInfo && (
+          <statusInfo.icon className={`w-4 h-4 shrink-0 ${statusInfo.cls}`}
+            style={{ color: status === 'success' ? '#10b981' : status === 'error' ? '#ef4444' : '#60a5fa' }} />
+        )}
+      </div>
+      {/* Output display area */}
+      <div className="px-3 py-2 min-h-[40px] max-h-[150px] overflow-y-auto">
+        {displayText ? (
+          <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
+            {displayText}
+          </p>
+        ) : (
+          <p className="text-[11px] text-gray-400 dark:text-gray-600 italic text-center py-2">
+            Output will appear here after execution
+          </p>
+        )}
+      </div>
+      <Handle type="source" position={Position.Right}
+        className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
+        style={{ background: color, right: -6 }}
+      />
+    </div>
+  );
+};
+
+/* ─────────── Router ─────────── */
+
 const TRIGGER_TYPES = new Set(Object.keys(TRIGGER_CONFIG));
 
-const CustomNode = ({ data, selected }) => {
+const CustomNode = ({ data, selected, id }) => {
   const registryType = data?.registryType || data?.nodeType?.type || '';
   const liveMeta = useNodeRegistryStore.getState().nodeTypes
     .find((n) => n.type === registryType);
@@ -260,6 +378,9 @@ const CustomNode = ({ data, selected }) => {
   }
   if (registryType === 'ai-agent') {
     return <AgentNode data={mergedData} selected={selected} />;
+  }
+  if (registryType === 'text-output') {
+    return <TextOutputNode data={mergedData} selected={selected} id={id} />;
   }
   return <StandardNode data={mergedData} selected={selected} />;
 };
