@@ -87,7 +87,7 @@ export async function execute(id) {
  * @returns {Promise<object>}
  */
 export async function activate(id) {
-  const { data } = await api.post(`/workflows/${id}/activate`);
+  const { data } = await api.put(`/workflows/${id}/activate`);
   return data;
 }
 
@@ -97,7 +97,7 @@ export async function activate(id) {
  * @returns {Promise<object>}
  */
 export async function deactivate(id) {
-  const { data } = await api.post(`/workflows/${id}/deactivate`);
+  const { data } = await api.put(`/workflows/${id}/deactivate`);
   return data;
 }
 
