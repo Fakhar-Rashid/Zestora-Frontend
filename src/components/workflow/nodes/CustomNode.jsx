@@ -132,6 +132,59 @@ const TriggerNode = ({ data, selected }) => {
   );
 };
 
+/* ─────────── Send Node (play-button / triangle shape) ─────────── */
+
+const SEND_CONFIG = {
+  'whatsapp-send':  { icon: WhatsAppIcon, color: '#25D366', label: 'Send WhatsApp message', custom: true },
+  'telegram-send':  { icon: TelegramIcon, color: '#0088cc', label: 'Send Telegram message', custom: true },
+  'send-email':     { icon: EmailIcon,     color: '#ef4444', label: 'Send email',            custom: true },
+  'http-request':   { icon: Globe,         color: '#f59e0b', label: 'HTTP Request',          custom: false },
+};
+
+const SendNode = ({ data, selected }) => {
+  const { nodeType, status = 'idle' } = data;
+  const registryType = data?.registryType || nodeType?.type || '';
+  const config = SEND_CONFIG[registryType] || { icon: Send, color: '#6366f1', label: registryType, custom: false };
+  const Icon = config.icon;
+  const statusInfo = STATUS[status];
+  const showStatus = statusInfo;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative">
+        <Handle type="target" position={Position.Left}
+          className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
+          style={{ background: config.color, left: -6, top: '50%', transform: 'translateY(-50%)' }}
+        />
+
+        {/* Play-button / rounded triangle shape */}
+        <svg width="72" height="72" viewBox="0 0 72 72"
+          className={`transition-all duration-200 ${selected ? 'drop-shadow-[0_0_8px_rgba(99,102,241,0.4)]' : ''}`}
+        >
+          <path
+            d="M12 6 C8 6, 6 8, 6 12 L6 60 C6 64, 8 66, 12 66 L50 66 C53 66, 55 65, 57 62 L68 40 C70 37, 70 35, 68 32 L57 10 C55 7, 53 6, 50 6 Z"
+            fill={config.color}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ paddingRight: '12%' }}>
+          {showStatus ? (
+            <statusInfo.icon
+              className={`w-7 h-7 text-white ${statusInfo.cls}`}
+            />
+          ) : config.custom ? (
+            <Icon className="w-7 h-7" />
+          ) : (
+            <Icon className="w-7 h-7 text-white" />
+          )}
+        </div>
+      </div>
+      <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 text-center max-w-[130px]">
+        {config.label}
+      </span>
+    </div>
+  );
+};
+
 /* ─────────── Standard Node ─────────── */
 
 const StandardNode = ({ data, selected }) => {
@@ -366,6 +419,7 @@ const TextOutputNode = ({ data, selected, id }) => {
 /* ─────────── Router ─────────── */
 
 const TRIGGER_TYPES = new Set(Object.keys(TRIGGER_CONFIG));
+const SEND_TYPES = new Set(Object.keys(SEND_CONFIG));
 
 const CustomNode = ({ data, selected, id }) => {
   const registryType = data?.registryType || data?.nodeType?.type || '';
@@ -375,6 +429,9 @@ const CustomNode = ({ data, selected, id }) => {
 
   if (TRIGGER_TYPES.has(registryType)) {
     return <TriggerNode data={mergedData} selected={selected} />;
+  }
+  if (SEND_TYPES.has(registryType)) {
+    return <SendNode data={mergedData} selected={selected} />;
   }
   if (registryType === 'ai-agent') {
     return <AgentNode data={mergedData} selected={selected} />;
