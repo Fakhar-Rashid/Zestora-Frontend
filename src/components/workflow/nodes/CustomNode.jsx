@@ -268,7 +268,7 @@ const AgentNode = ({ data, selected, id }) => {
   const closePanel = useCallback(() => setOpenPanel(null), []);
 
   // Derive configured status
-  const hasModel = !!liveConfig.provider;
+  const hasModel = !!liveConfig.provider && !!liveConfig.credentialId;
   const hasMemory = liveConfig.memoryEnabled !== false;
   const hasTools = liveConfig.enableTools !== false;
 
@@ -308,7 +308,7 @@ const AgentNode = ({ data, selected, id }) => {
             {label}
           </p>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-            {liveConfig.provider
+            {liveConfig.provider && liveConfig.credentialId
               ? `${liveConfig.provider}${liveConfig.model ? ` · ${liveConfig.model}` : ''}`
               : 'Tools Agent'}
           </p>

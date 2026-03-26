@@ -133,6 +133,7 @@ const PropertiesPanel = () => {
 
   // For AI Agent nodes, filter out fields now managed by the + buttons on the node
   const AGENT_BUTTON_KEYS = new Set([
+    'credentialId',
     'provider', 'model', 'temperature', 'maxTokens', 'responseFormat',
     'memoryEnabled', 'memoryWindow', 'autoSummarize',
     'enableTools',
