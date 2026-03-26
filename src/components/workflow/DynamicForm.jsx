@@ -47,7 +47,7 @@ const DynamicForm = ({ schema, values = {}, onChange }) => {
           <FieldComponent
             key={field.key}
             field={field}
-            value={values[field.key]}
+            value={values[field.key] ?? field.default}
             onChange={onChange}
           />
         );
