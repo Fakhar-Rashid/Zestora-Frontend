@@ -127,9 +127,21 @@ const PropertiesPanel = () => {
   const nodeData = selectedNode.data || {};
   const nodeType = nodeData.nodeType || {};
   const rawSchema = nodeType.schema || nodeType.configSchema || {};
-  const schema = rawSchema.fields || rawSchema || [];
+  const allFields = rawSchema.fields || rawSchema || [];
   const color = nodeType.color || '#6366f1';
   const Icon = getIcon(nodeType.icon);
+
+  // For AI Agent nodes, filter out fields now managed by the + buttons on the node
+  const AGENT_BUTTON_KEYS = new Set([
+    'credentialId',
+    'provider', 'model', 'temperature', 'maxTokens', 'responseFormat',
+    'memoryEnabled', 'memoryWindow', 'autoSummarize',
+    'enableTools',
+  ]);
+  const registryType = nodeData.registryType || nodeType.type || '';
+  const schema = registryType === 'ai-agent'
+    ? allFields.filter((f) => !AGENT_BUTTON_KEYS.has(f.key))
+    : allFields;
 
   return (
     <div className="w-80 flex-shrink-0 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">

@@ -1,8 +1,9 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import useNodeRegistryStore from '../../../store/nodeRegistryStore';
 import useWorkflowStore from '../../../store/workflowStore';
 import runWorkflow from '../../../utils/executeWorkflow';
+import { ChatModelPanel, MemoryPanel, ToolPanel } from './AgentSubPanels';
 import {
   Play, MessageCircle, Send, Mail, Bot, FileText, Smile,
   Youtube, MapPin, GitBranch, GitMerge, GitPullRequest,
@@ -39,13 +40,13 @@ const STATUS = {
 
 const WhatsAppIcon = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="white">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
   </svg>
 );
 
 const TelegramIcon = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="white">
-    <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
   </svg>
 );
 
@@ -59,12 +60,12 @@ const EmailIcon = ({ className }) => (
 /* ─────────── Trigger configs ─────────── */
 
 const TRIGGER_CONFIG = {
-  'manual-trigger':    { icon: Play,          color: '#6366f1', label: 'Test workflow',            fill: true },
-  'whatsapp-receive':  { icon: WhatsAppIcon,  color: '#25D366', label: 'Receive WhatsApp message', fill: false, custom: true },
-  'telegram-receive':  { icon: TelegramIcon,  color: '#0088cc', label: 'Receive Telegram message', fill: false, custom: true },
-  'email-receive':     { icon: EmailIcon,     color: '#ef4444', label: 'Receive email',            fill: false, custom: true },
-  'webhook-trigger':   { icon: Webhook,       color: '#f59e0b', label: 'Webhook trigger',          fill: false },
-  'schedule-trigger':  { icon: Clock,         color: '#8b5cf6', label: 'Scheduled trigger',        fill: false },
+  'manual-trigger': { icon: Play, color: '#6366f1', label: 'Test workflow', fill: true },
+  'whatsapp-receive': { icon: WhatsAppIcon, color: '#25D366', label: 'Receive WhatsApp message', fill: false, custom: true },
+  'telegram-receive': { icon: TelegramIcon, color: '#0088cc', label: 'Receive Telegram message', fill: false, custom: true },
+  'email-receive': { icon: EmailIcon, color: '#ef4444', label: 'Receive email', fill: false, custom: true },
+  'webhook-trigger': { icon: Webhook, color: '#f59e0b', label: 'Webhook trigger', fill: false },
+  'schedule-trigger': { icon: Clock, color: '#8b5cf6', label: 'Scheduled trigger', fill: false },
 };
 
 /* ─────────── Trigger Node ─────────── */
@@ -135,10 +136,10 @@ const TriggerNode = ({ data, selected }) => {
 /* ─────────── Send Node (play-button / triangle shape) ─────────── */
 
 const SEND_CONFIG = {
-  'whatsapp-send':  { icon: WhatsAppIcon, color: '#25D366', label: 'Send WhatsApp message', custom: true },
-  'telegram-send':  { icon: TelegramIcon, color: '#0088cc', label: 'Send Telegram message', custom: true },
-  'send-email':     { icon: EmailIcon,     color: '#ef4444', label: 'Send email',            custom: true },
-  'http-request':   { icon: Globe,         color: '#f59e0b', label: 'HTTP Request',          custom: false },
+  'whatsapp-send': { icon: WhatsAppIcon, color: '#25D366', label: 'Send WhatsApp message', custom: true },
+  'telegram-send': { icon: TelegramIcon, color: '#0088cc', label: 'Send Telegram message', custom: true },
+  'send-email': { icon: EmailIcon, color: '#ef4444', label: 'Send email', custom: true },
+  'http-request': { icon: Globe, color: '#f59e0b', label: 'HTTP Request', custom: false },
 };
 
 const SendNode = ({ data, selected }) => {
@@ -242,44 +243,45 @@ const StandardNode = ({ data, selected }) => {
   );
 };
 
-/* ─────────── Agent Node (with functional indicators) ─────────── */
+/* ─────────── Agent Node (n8n-style with + buttons) ─────────── */
 
-const AgentNode = ({ data, selected }) => {
+const AGENT_BUTTONS = [
+  { id: 'chatModel', label: 'Chat Model', icon: Cpu, color: '#3b82f6', configKey: 'provider' },
+  { id: 'memory', label: 'Memory', icon: Brain, color: '#f59e0b', configKey: 'memoryEnabled' },
+  { id: 'tool', label: 'Tool', icon: Wrench, color: '#10b981', configKey: 'enableTools' },
+];
+
+const AgentNode = ({ data, selected, id }) => {
   const { label, nodeType, status = 'idle', config = {} } = data;
   const color = nodeType?.color || '#8b5cf6';
   const statusInfo = STATUS[status];
+  const [openPanel, setOpenPanel] = useState(null);
 
-  // Derive what's configured from properties
-  const hasModel = !!config.provider;
-  const hasMemory = config.memoryEnabled !== false;
-  const hasTools = config.enableTools !== false;
+  // Read latest config from store so panels get fresh data
+  const liveNodes = useWorkflowStore((s) => s.nodes);
+  const liveConfig = liveNodes.find((n) => n.id === id)?.data?.config || config;
 
-  const indicators = [
-    {
-      id: 'model',
-      label: config.provider || 'Model',
-      icon: Cpu,
-      active: hasModel,
-      color: '#3b82f6',
-    },
-    {
-      id: 'memory',
-      label: hasMemory ? `Memory (${config.memoryWindow || 20})` : 'No Memory',
-      icon: Brain,
-      active: hasMemory,
-      color: '#f59e0b',
-    },
-    {
-      id: 'tools',
-      label: hasTools ? 'Tools On' : 'Tools Off',
-      icon: Wrench,
-      active: hasTools,
-      color: '#10b981',
-    },
-  ];
+  const togglePanel = useCallback((panelId) => {
+    setOpenPanel((prev) => (prev === panelId ? null : panelId));
+  }, []);
+
+  const closePanel = useCallback(() => setOpenPanel(null), []);
+
+  // Derive configured status
+  const hasModel = !!liveConfig.provider && !!liveConfig.credentialId;
+  const hasMemory = liveConfig.memoryEnabled !== false;
+  const hasTools = liveConfig.enableTools !== false;
+
+  const isConfigured = (btnId) => {
+    if (btnId === 'chatModel') return hasModel;
+    if (btnId === 'memory') return hasMemory;
+    if (btnId === 'tool') return hasTools;
+    return false;
+  };
 
   return (
     <div className="flex flex-col items-center">
+      {/* ── Main node card ── */}
       <div
         className={`
           relative w-[220px] rounded-2xl
@@ -295,6 +297,7 @@ const AgentNode = ({ data, selected }) => {
           className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
           style={{ background: color, left: -6 }}
         />
+
         {/* Agent header */}
         <div className="flex flex-col items-center py-3 px-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-2xl mb-1.5"
@@ -305,7 +308,9 @@ const AgentNode = ({ data, selected }) => {
             {label}
           </p>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-            {config.provider ? `${config.provider}${config.model ? ` · ${config.model}` : ''}` : 'Tools Agent'}
+            {liveConfig.provider && liveConfig.credentialId
+              ? `${liveConfig.provider}${liveConfig.model ? ` · ${liveConfig.model}` : ''}`
+              : 'Tools Agent'}
           </p>
           {statusInfo && (
             <statusInfo.icon className={`w-4 h-4 mt-1 ${statusInfo.cls}`}
@@ -313,28 +318,65 @@ const AgentNode = ({ data, selected }) => {
           )}
         </div>
 
-        {/* Configuration indicators */}
-        <div className="border-t border-gray-100 dark:border-gray-700/50 px-2.5 py-1.5 flex items-center justify-center gap-3">
-          {indicators.map((ind) => {
-            const IndIcon = ind.icon;
-            return (
-              <div key={ind.id} className="flex items-center gap-1" title={ind.label}>
-                <IndIcon
-                  className="w-3 h-3"
-                  style={{ color: ind.active ? ind.color : '#9ca3af' }}
-                />
-                <span className={`text-[9px] font-medium ${ind.active ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'}`}>
-                  {ind.id === 'model' ? (config.provider || 'N/A') : ind.active ? 'On' : 'Off'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
         <Handle type="source" position={Position.Right}
           className="!w-[10px] !h-[10px] !border-[2px] !border-white dark:!border-[#1c1c28] !rounded-full"
           style={{ background: color, right: -6 }}
         />
+      </div>
+
+      {/* ── Three + buttons (n8n style) ── */}
+      <div className="flex items-start justify-center gap-6 mt-2">
+        {AGENT_BUTTONS.map((btn) => {
+          const BtnIcon = btn.icon;
+          const configured = isConfigured(btn.id);
+          const isOpen = openPanel === btn.id;
+
+          return (
+            <div key={btn.id} className="relative flex flex-col items-center">
+              {/* Dotted connector line */}
+              <div className="w-px h-3 border-l border-dashed border-gray-300 dark:border-gray-600" />
+
+              {/* + Button */}
+              <button
+                data-agent-btn
+                onClick={(e) => { e.stopPropagation(); togglePanel(btn.id); }}
+                className={`
+                  group relative flex items-center justify-center w-8 h-8 rounded-full
+                  border-[1.5px] transition-all duration-200
+                  ${configured
+                    ? 'border-transparent shadow-md hover:shadow-lg hover:scale-110'
+                    : 'border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1c1c28] hover:border-solid hover:shadow-md hover:scale-110'}
+                  ${isOpen ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-[#1c1c28] scale-110 shadow-lg' : ''}
+                `}
+                style={configured ? { background: btn.color, ...(isOpen ? { ringColor: btn.color } : {}) } : (isOpen ? { borderColor: btn.color, borderStyle: 'solid' } : {})}
+                title={btn.label}
+              >
+                {configured ? (
+                  <BtnIcon className="w-3.5 h-3.5 text-white" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                )}
+              </button>
+
+              {/* Label */}
+              <span className={`text-[9px] font-medium mt-1 whitespace-nowrap transition-colors
+                ${configured ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                {btn.label}
+              </span>
+
+              {/* ── Floating config panel ── */}
+              {isOpen && btn.id === 'chatModel' && (
+                <ChatModelPanel nodeId={id} config={liveConfig} onClose={closePanel} />
+              )}
+              {isOpen && btn.id === 'memory' && (
+                <MemoryPanel nodeId={id} config={liveConfig} onClose={closePanel} />
+              )}
+              {isOpen && btn.id === 'tool' && (
+                <ToolPanel nodeId={id} config={liveConfig} onClose={closePanel} />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -434,7 +476,7 @@ const CustomNode = ({ data, selected, id }) => {
     return <SendNode data={mergedData} selected={selected} />;
   }
   if (registryType === 'ai-agent') {
-    return <AgentNode data={mergedData} selected={selected} />;
+    return <AgentNode data={mergedData} selected={selected} id={id} />;
   }
   if (registryType === 'text-output') {
     return <TextOutputNode data={mergedData} selected={selected} id={id} />;
