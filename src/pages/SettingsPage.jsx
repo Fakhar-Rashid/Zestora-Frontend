@@ -45,7 +45,7 @@ const SettingsPage = () => {
   const handleUpdate = async (payload) => {
     if (!editingCredential) return;
     try {
-      await credentialService.update(editingCredential._id, {
+      await credentialService.update(editingCredential.id, {
         name: payload.name,
         data: payload.data,
       });
@@ -61,7 +61,7 @@ const SettingsPage = () => {
     try {
       await credentialService.remove(id);
       toast.success('Credential deleted');
-      setCredentials((prev) => prev.filter((c) => c._id !== id));
+      setCredentials((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete credential');
       throw err;
@@ -155,7 +155,7 @@ const SettingsPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {credentials.map((cred) => (
               <CredentialCard
-                key={cred._id}
+                key={cred.id}
                 credential={cred}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

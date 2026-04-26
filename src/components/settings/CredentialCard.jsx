@@ -55,7 +55,7 @@ const CredentialCard = ({ credential, onEdit, onDelete }) => {
     }
     setDeleting(true);
     try {
-      await onDelete(credential._id);
+      await onDelete(credential.id);
     } catch {
       setDeleting(false);
       setConfirmDelete(false);
