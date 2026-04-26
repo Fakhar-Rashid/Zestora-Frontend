@@ -137,6 +137,7 @@ const PropertiesPanel = () => {
     'provider', 'model', 'temperature', 'maxTokens', 'responseFormat',
     'memoryEnabled', 'memoryWindow', 'autoSummarize',
     'enableTools',
+    'knowledgeBase',
   ]);
   const registryType = nodeData.registryType || nodeType.type || '';
   const schema = registryType === 'ai-agent'

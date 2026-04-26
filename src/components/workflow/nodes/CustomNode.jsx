@@ -3,7 +3,7 @@ import { Handle, Position, useReactFlow } from '@xyflow/react';
 import useNodeRegistryStore from '../../../store/nodeRegistryStore';
 import useWorkflowStore from '../../../store/workflowStore';
 import runWorkflow from '../../../utils/executeWorkflow';
-import { ChatModelPanel, MemoryPanel, ToolPanel } from './AgentSubPanels';
+import { ChatModelPanel, MemoryPanel, ToolPanel, KnowledgeBasePanel } from './AgentSubPanels';
 import {
   Play, MessageCircle, Send, Mail, Bot, FileText, Smile,
   Youtube, MapPin, GitBranch, GitMerge, GitPullRequest,
@@ -249,6 +249,7 @@ const AGENT_BUTTONS = [
   { id: 'chatModel', label: 'Chat Model', icon: Cpu, color: '#3b82f6', configKey: 'provider' },
   { id: 'memory', label: 'Memory', icon: Brain, color: '#f59e0b', configKey: 'memoryEnabled' },
   { id: 'tool', label: 'Tool', icon: Wrench, color: '#10b981', configKey: 'enableTools' },
+  { id: 'knowledgeBase', label: 'Knowledge', icon: BookOpen, color: '#8b5cf6', configKey: 'knowledgeBase' },
 ];
 
 const AgentNode = ({ data, selected, id }) => {
@@ -276,6 +277,7 @@ const AgentNode = ({ data, selected, id }) => {
     if (btnId === 'chatModel') return hasModel;
     if (btnId === 'memory') return hasMemory;
     if (btnId === 'tool') return hasTools;
+    if (btnId === 'knowledgeBase') return false;
     return false;
   };
 
@@ -373,6 +375,9 @@ const AgentNode = ({ data, selected, id }) => {
               )}
               {isOpen && btn.id === 'tool' && (
                 <ToolPanel nodeId={id} config={liveConfig} onClose={closePanel} />
+              )}
+              {isOpen && btn.id === 'knowledgeBase' && (
+                <KnowledgeBasePanel onClose={closePanel} />
               )}
             </div>
           );
