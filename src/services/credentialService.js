@@ -41,3 +41,18 @@ export async function remove(id) {
   const { data } = await api.delete(`/credentials/${id}`);
   return data;
 }
+
+export async function whatsappConnect(id) {
+  const { data } = await api.post(`/credentials/${id}/whatsapp/connect`);
+  return data;
+}
+
+export async function whatsappStatus(id) {
+  const { data } = await api.get(`/credentials/${id}/whatsapp/status`);
+  return data;
+}
+
+export async function whatsappDisconnect(id) {
+  const { data } = await api.post(`/credentials/${id}/whatsapp/disconnect`);
+  return data;
+}

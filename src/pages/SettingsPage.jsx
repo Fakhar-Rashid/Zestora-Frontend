@@ -31,9 +31,11 @@ const SettingsPage = () => {
 
   const handleCreate = async (payload) => {
     try {
-      await credentialService.create(payload);
+      const response = await credentialService.create(payload);
+      const created = response.data || response;
       toast.success('Credential created');
       fetchCredentials();
+      return created;
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create credential');
       throw err;
@@ -79,9 +81,9 @@ const SettingsPage = () => {
   const handleDialogSubmit = async (payload) => {
     if (editingCredential) {
       await handleUpdate(payload);
-    } else {
-      await handleCreate(payload);
+      return null;
     }
+    return handleCreate(payload);
   };
 
   return (

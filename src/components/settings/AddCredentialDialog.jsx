@@ -15,8 +15,10 @@ import {
   Mail,
   Inbox,
   Hash,
+  Smartphone,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import WhatsAppQRModal from './WhatsAppQRModal';
 
 // ── Service definitions ───────────────────────────────────────────────
 const services = [
@@ -36,10 +38,7 @@ const services = [
 
 // ── Field schemas per service ─────────────────────────────────────────
 const serviceFields = {
-  whatsapp: [
-    { key: 'phoneNumberId', label: 'Phone Number ID', placeholder: 'e.g. 123456789' },
-    { key: 'accessToken', label: 'Access Token', placeholder: 'Permanent access token', sensitive: true },
-  ],
+  whatsapp: [],
   telegram: [
     { key: 'botToken', label: 'Bot Token', placeholder: 'e.g. 123456:ABC-DEF...', sensitive: true },
   ],
@@ -94,8 +93,10 @@ const AddCredentialDialog = ({ open, onClose, onSubmit, editingCredential }) => 
   const [formData, setFormData] = useState({ name: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [qrCredentialId, setQrCredentialId] = useState(null);
 
   const isEditing = !!editingCredential;
+  const isWhatsApp = selectedService === 'whatsapp';
 
   // Reset state when dialog opens/closes or editing changes
   useEffect(() => {
@@ -171,12 +172,18 @@ const AddCredentialDialog = ({ open, onClose, onSubmit, editingCredential }) => 
         }
       });
 
-      await onSubmit({
+      const created = await onSubmit({
         name: formData.name,
         type: getTypeForService(selectedService),
         service: selectedService,
         data,
       });
+
+      if (selectedService === 'whatsapp' && !isEditing && created?.id) {
+        setQrCredentialId(created.id);
+        return;
+      }
+
       onClose();
     } catch {
       // Error handled by parent
@@ -185,7 +192,22 @@ const AddCredentialDialog = ({ open, onClose, onSubmit, editingCredential }) => 
     }
   };
 
-  if (!open) return null;
+  const handleQrClose = () => {
+    setQrCredentialId(null);
+    onClose();
+  };
+
+  if (!open && !qrCredentialId) return null;
+
+  if (qrCredentialId) {
+    return (
+      <WhatsAppQRModal
+        open={true}
+        credentialId={qrCredentialId}
+        onClose={handleQrClose}
+      />
+    );
+  }
 
   const fields = serviceFields[selectedService] || [];
   const selectedServiceMeta = services.find((s) => s.id === selectedService);
@@ -310,6 +332,16 @@ const AddCredentialDialog = ({ open, onClose, onSubmit, editingCredential }) => 
               )}
             </div>
 
+            {/* WhatsApp info banner */}
+            {isWhatsApp && !isEditing && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40">
+                <Smartphone className="w-4 h-4 mt-0.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div className="text-xs text-green-700 dark:text-green-300 leading-relaxed">
+                  After creating, you'll scan a QR code with your phone (WhatsApp → Settings → Linked Devices) to link your account. No phone number or token required.
+                </div>
+              </div>
+            )}
+
             {/* Dynamic service fields */}
             {fields.map((field) => (
               <div key={field.key}>
@@ -362,7 +394,11 @@ const AddCredentialDialog = ({ open, onClose, onSubmit, editingCredential }) => 
                 ) : (
                   <>
                     <ArrowRight className="w-4 h-4 mr-2" />
-                    {isEditing ? 'Update Credential' : 'Create Credential'}
+                    {isEditing
+                      ? 'Update Credential'
+                      : isWhatsApp
+                        ? 'Continue to QR Scan'
+                        : 'Create Credential'}
                   </>
                 )}
               </button>
